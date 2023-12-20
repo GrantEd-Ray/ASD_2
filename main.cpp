@@ -1,7 +1,8 @@
+#include <windows.h>
 #include <iostream>
 #include <stack>
 #include <string>
-#include <windows.h>
+#include <cctype>
 
 bool isOperator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/';
@@ -38,10 +39,14 @@ double calculate(std::string expression) {
     std::stack<double> values;
     std::stack<char> ops;
 
-    for (size_t i = 0; i < expression.length(); ++i) {
+    size_t i = 0;
+    while (i < expression.length()) {
         if (expression[i] == ' ') {
+            ++i;
             continue;
-        } else if (isdigit(expression[i])) {
+        }
+
+        if (isdigit(expression[i])) {
             std::string numStr;
             while (i < expression.length() && (isdigit(expression[i]) || expression[i] == '.')) {
                 numStr += expression[i++];
@@ -65,6 +70,14 @@ double calculate(std::string expression) {
             }
             ops.pop(); // Remove '('
         } else if (isOperator(expression[i])) {
+            if (i == 0 || expression[i - 1] == '(' || (expression[i] == '-' && (i == 0 || expression[i - 1] == '('))) {
+                values.push(0); // Унарный минус, добавляем 0 в стек
+            }
+            else if (isOperator(expression[i - 1])) {
+                std::cout << "Ошибка: два оператора идут подряд" << std::endl;
+                return 0;
+            }
+
             while (!ops.empty() && precedence(ops.top()) >= precedence(expression[i])) {
                 double val2 = values.top();
                 values.pop();
@@ -79,6 +92,8 @@ double calculate(std::string expression) {
             }
             ops.push(expression[i]);
         }
+
+        ++i;
     }
 
     while (!ops.empty()) {
@@ -105,7 +120,7 @@ int main() {
     std::cout << "Введите математическое выражение (окончание на '='): ";
     std::getline(std::cin, expression);
 
-    if (expression.back() == '=') {
+    if (!expression.empty() && expression.back() == '=') {
         expression.pop_back(); // Убираем '='
         expression.erase(std::remove(expression.begin(), expression.end(), ' '), expression.end()); // Убираем пробелы
 
@@ -128,4 +143,5 @@ int main() {
 
     return 0;
 }
+
 
